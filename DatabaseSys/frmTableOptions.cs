@@ -30,6 +30,8 @@ namespace DatabaseSys
         Dictionary<string, string> dataTypeMapper;
         string conString = "";
         private int index;
+        private SqlCommand cmd2;
+        string insrtQuery;
         public frmTableOptions()
         {
             InitializeComponent();
@@ -140,7 +142,12 @@ namespace DatabaseSys
                         cmd.ExecuteNonQuery();
                         con.Close();
 
-                        var insrtQuery = " INSERT INTO "+tableName+" ";
+
+                        con.Open();
+                        cmd2 = con.CreateCommand();
+                        //preparing insert query
+
+                        insrtQuery = " INSERT INTO "+tableName+" ";
                         insrtQuery += "( ";
                             for (int lcv = 0;  lcv < finalColumns.Count; lcv++)
                             {
@@ -149,7 +156,19 @@ namespace DatabaseSys
                             }
                             insrtQuery += " createdAt, DataBaseCountry, dataSource ) ";
                             insrtQuery += "VALUES ";
-                            insrtQuery += "( ";
+                            //insrtQuery += "( ";
+                        
+                        //for(int lcv = 0; lcv < finalColumns.Count; lcv++)
+                        //{
+                        //    insrtQuery += "@" + finalColumns[lcv].Replace(" ", "_") + ", ";
+                        //}
+
+                        //insrtQuery += " @createdAt, @DataBaseCountry, @dataSource ),(";
+                        //insrtQuery += "'" + DateTime.Now + "', '" + frmCatForSelect.country + "', '" + frmCatForSelect.fileSource + "' ),(";
+
+                        //insrtQuery = insrtQuery.Remove(insrtQuery.Length - 2);
+                        //insrtQuery += ";";
+
 
                         //Writing records
                         if (frmCatForSelect.selectedFormat.Equals("CSV"))
@@ -174,19 +193,19 @@ namespace DatabaseSys
                                 {
                                     if (colCount + 800 < records.Count)
                                     {
-                                        writeCSVToDatabase(insrtQuery, colCount, colCount + 800);
+                                        writeCSVToDatabase( colCount, colCount + 800);
                                     }
 
                                 }
                                 if (colCount < records.Count - 1)
                                 {
 
-                                    writeCSVToDatabase(insrtQuery, colCount, records.Count);
+                                    writeCSVToDatabase( colCount, records.Count);
                                 }
                             }
                             else
                             {
-                                writeCSVToDatabase(insrtQuery, 0, records.Count);
+                                writeCSVToDatabase( 0, records.Count);
                             }
 
 
@@ -269,6 +288,22 @@ namespace DatabaseSys
                                 }
                                
                             }
+                        }
+
+
+                        //insrtQuery = insrtQuery.Remove(insrtQuery.Length - 2);
+                        //insrtQuery += ";";
+                        cmd2.CommandText = insrtQuery.Substring(0, insrtQuery.Length - 1)+";";
+                        int execQreturn = cmd2.ExecuteNonQuery();
+                        con.Close();
+                        if (execQreturn == -1)
+                        {
+                            MessageBox.Show("Table creation failed. Make sure you have given the table names and selected appropriate column types. Or the file may have data in inappropriate form");
+
+                        }
+                        else
+                        {
+                            MessageBox.Show("Table created Successfully with all the records");
                         }
                     }
                     else
@@ -451,15 +486,15 @@ namespace DatabaseSys
                 }
             }
         }
-        private void writeCSVToDatabase(String insrtQuery, int initial, int last)
+        private void writeCSVToDatabase( int initial, int last)
         {
 
             //var csvFilereader = new DataTable();
             //csvFilereader = ReadExcel();
 
 
-            using (SqlConnection con = new SqlConnection(conString))
-            {
+            //using (SqlConnection con = new SqlConnection(conString))
+            //{
                 using (var fileReader = File.OpenText(frmCatForSelect.filename))
                 {
                     using (var csvResult = new CsvReader(fileReader, CultureInfo.InvariantCulture))
@@ -474,8 +509,17 @@ namespace DatabaseSys
                             int fColInd = 0;
                             if (csvResult != null)
                             {
-                                //Move one row 
-                                csvResult.Read();
+                                insrtQuery += "( ";
+
+                                for (int lcv = 0; lcv < finalColumns.Count; lcv++)
+                                {
+                                    insrtQuery += "@" + finalColumns[lcv].Replace(" ", "_") + i+", ";
+                                }
+
+                                insrtQuery += " @createdAt"+i+ ", @DataBaseCountry" + i+ ", @dataSource" + i + " ),";
+                                //insrtQuery += " @createdAt"+i+ ", @DataBaseCountry" + i+ ", @dataSource" + i + " ),(";
+                            //Move one row 
+                            csvResult.Read();
 
 
                                 //getting all the columns selected by user. it allows to get records of Only the selected columns like 0 2 8
@@ -483,15 +527,18 @@ namespace DatabaseSys
                                 {
                                     //getting the type of current column from datatypemapper to check if '' is needed if the type is set to non number.
                                     string currentColType = dataTypeMapper[columnToTypeMapper[finalColumns[fColInd]]];
+                                    string currentColName = finalColumns[fColInd].Replace(" ", "_");
                                     if (frmCatForSelect.isDelimiteredFile)
                                     {
                                         string[] delimiterSplittedValues = csvResult.GetField<string>(0).Split('|');
                                         currentValue = delimiterSplittedValues[finalColumnsIndices[ind]];
+                                        
                                     }
                                     else
                                     {
                                         currentValue = csvResult.GetField<string>(finalColumnsIndices[ind]);
                                     }
+
                                     if (isOfIntType(currentColType))
                                     {
                                         
@@ -499,12 +546,17 @@ namespace DatabaseSys
                                         {
                                             if (currentValue.ToString() == "")
                                             {
-                                                insrtQuery += 0 + ", ";
+                                            //insrtQuery += 0 + ", ";
+
+                                                cmd2.Parameters.AddWithValue("@" + currentColName + "", 0);
                                             }
                                             else
                                             {
                                                 int curIntVal = Convert.ToInt32(currentValue);
-                                                insrtQuery += curIntVal + ", ";
+                                                
+                                                cmd2.Parameters.AddWithValue("@" + currentColName + "",curIntVal);
+                                                //cmd2.Paraters.AddWithValue()
+                                                //insrtQuery += curIntVal + ", ";
                                             }
 
                                         }
@@ -512,75 +564,86 @@ namespace DatabaseSys
                                         {
                                             if (currentValue.ToString() == "")
                                             {
-                                                insrtQuery += 0 + ", ";
+                                                cmd2.Parameters.AddWithValue("@" + currentColName + "", 0);
                                             }
                                             else
                                             {
                                                 double curIntVal = Convert.ToDouble(currentValue);
-                                                insrtQuery += curIntVal + ", ";
+                                                cmd2.Parameters.AddWithValue("@" + currentColName + "", curIntVal);
                                             }
                                         }
                                         else if (currentColType.Equals("TINYINT"))
                                         {
                                             if (currentValue.ToString() == "")
                                             {
-                                                insrtQuery += 0 + ", ";
+                                                cmd2.Parameters.AddWithValue("@" + currentColName + "", 0);
                                             }
-                                            else
+                                        else
                                             {
                                                 Byte curIntVal = Convert.ToByte(currentValue);
-                                                insrtQuery += curIntVal + ", ";
+                                                cmd2.Parameters.AddWithValue("@" + currentColName + "", curIntVal);
                                             }
                                         }
                                         else if (currentColType.Equals("BIT"))
                                         {
                                             if (currentValue.ToString() == "")
                                             {
-                                                insrtQuery += 0 + ", ";
+                                                cmd2.Parameters.AddWithValue("@" + currentColName + "", 0);
                                             }
                                             else
                                             {
                                                 Boolean curIntVal = Convert.ToBoolean(currentValue);
-                                                insrtQuery += curIntVal + ", ";
+                                                cmd2.Parameters.AddWithValue("@" + currentColName + "", curIntVal);
                                             }
                                         }
                                         else //if (currentColType.Equals("SMALLINT"))
                                         {
                                             if (currentValue.ToString() == "")
                                             {
-                                                insrtQuery += 0 + ", ";
+                                                currentColName = "@" + currentColName;
+                                                cmd2.Parameters.AddWithValue( currentColName, 0);
                                             }
                                             else
                                             {
                                                 int curIntVal = Convert.ToInt16(currentValue);
-                                                insrtQuery += curIntVal + ", ";
+                                                currentColName = "@" + currentColName;
+                                                cmd2.Parameters.AddWithValue(currentColName, curIntVal);
+
                                             }
                                         }
                                     }
                                     else
                                     {
                                         string currentColumnValue = currentValue.ToString();
-                                        //string currentColumnValue = csvResult.GetField<string>(finalColumnsIndices[ind]).ToString();
-                                        Regex punctuationCharacters = new Regex(@"[,'`]");
+                                    //currentColName = "@" + currentColName;
 
-                                        //check if punctuation replace needed in the data
-                                        if (punctuationCharacters.IsMatch(currentColumnValue))
-                                        {
-                                            MatchCollection mCol = punctuationCharacters.Matches(currentColumnValue);
-                                            String puncReplaced = "";
-                                            foreach (Match mat in mCol)
-                                            {
+                                        cmd2.Parameters.Add(new SqlParameter(currentColName + i, currentColumnValue));
+                                        //cmd2.Parameters[currentColName].Value =  "tv";
+                                        //cmd2.Parameters.AddWithValue(currentColName, "tv");
 
-                                                puncReplaced = punctuationCharacters.Replace(currentColumnValue, "\\" + mat.Value);
-                                            }
-                                            insrtQuery += "'" + puncReplaced + "', ";
-                                        }
-                                        else
-                                        {
-                                            insrtQuery += "' " + currentColumnValue + "', ";
-                                        }
 
-                                    }
+
+                                    ////string currentColumnValue = csvResult.GetField<string>(finalColumnsIndices[ind]).ToString();
+                                    //Regex punctuationCharacters = new Regex(@"[,'`]");
+
+                                    ////check if punctuation replace needed in the data
+                                    //if (punctuationCharacters.IsMatch(currentColumnValue))
+                                    //{
+                                    //    MatchCollection mCol = punctuationCharacters.Matches(currentColumnValue);
+                                    //    String puncReplaced = "";
+                                    //    foreach (Match mat in mCol)
+                                    //    {
+
+                                    //        puncReplaced = punctuationCharacters.Replace(currentColumnValue, "\\" + mat.Value);
+                                    //    }
+                                    //    insrtQuery += "'" + puncReplaced + "', ";
+                                    //}
+                                    //else
+                                    //{
+                                    //    insrtQuery += "' " + currentColumnValue + "', ";
+                                    //}
+
+                                }
                                     fColInd++;
                                     /////////////////////
                                     //    if (currentColType.Equals("INT"))
@@ -670,33 +733,38 @@ namespace DatabaseSys
                                     //}
                                     //fColInd++;
                                 }
-                                insrtQuery += "'" + DateTime.Now + "', '" + frmCatForSelect.country + "', '" + frmCatForSelect.fileSource + "' ),(";
-                                
-                                
+                            //insrtQuery += "'" + DateTime.Now + "', '" + frmCatForSelect.country + "', '" + frmCatForSelect.fileSource + "' ),(";
+                            //insrtQuery += "'" + DateTime.Now + "', '" + frmCatForSelect.country + "', '" + frmCatForSelect.fileSource + "' ),(";
+
+                            //cmd2.Parameters["@createdAt"].Value = DateTime.Now;
+                            //cmd2.Parameters["@DataBaseCountry"].Value = frmCatForSelect.country;
+                            //cmd2.Parameters["@dataSource"].Value = frmCatForSelect.fileSource;
+
+                            //cmd2.Parameters.AddWithValue("@createdAt",DateTime.Now);
+                            //cmd2.Parameters.AddWithValue("@DataBaseCountry",frmCatForSelect.country);
+                            //cmd2.Parameters.AddWithValue("@dataSource",frmCatForSelect.fileSource);
+
+                            cmd2.Parameters.Add(new SqlParameter("createdAt" + i, DateTime.Now));
+                            cmd2.Parameters.Add(new SqlParameter("DataBaseCountry" + i, frmCatForSelect.country));
+                            cmd2.Parameters.Add(new SqlParameter("dataSource" + i, frmCatForSelect.fileSource));
+
+
                             }
                         }
-                        //MessageBox.Show("count: " + records.Count.ToString());
+
+                    //insrtQuery = insrtQuery.Remove(insrtQuery.Length - 2);
+                    //insrtQuery += ";";
+                    //MessageBox.Show("count: " + records.Count.ToString());
                     }
                 }
-                insrtQuery = insrtQuery.Remove(insrtQuery.Length - 2);
-                insrtQuery += ";";
-                SqlCommand cmd2 = new SqlCommand(insrtQuery);
-                cmd2.Connection = con;
-                con.Open();
-                int execQreturn = cmd2.ExecuteNonQuery();
-                con.Close(); 
-                if (execQreturn == -1)
-                {
-                    MessageBox.Show("Table creation failed. Make sure you have given the table names and selected appropriate column types. Or the file may have data in inappropriate form");
+            //insrtQuery = insrtQuery.Remove(insrtQuery.Length - 2);
+            //insrtQuery += ";";
+            //SqlCommand cmd2 = new SqlCommand(*insrtQuery);
+            //cmd2.Connection = con;
+            //con.Open();
 
-                }
-                else
-                {
-                    MessageBox.Show("Table created Successfully with all the records");
-                }
-
-            }
-    }
+            //}
+        }
 
         private void writeTXTToDatabase(String insrtQuery, int initial, int last)
         {
