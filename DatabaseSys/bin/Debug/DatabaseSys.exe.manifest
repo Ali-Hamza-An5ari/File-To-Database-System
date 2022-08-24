@@ -66,14 +66,14 @@
     </dependentAssembly>
   </dependency>
   <dependency>
-    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="DatabaseSys.exe" size="1886704">
+    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="DatabaseSys.exe" size="1888240">
       <assemblyIdentity name="DatabaseSys" version="1.0.0.0" language="neutral" processorArchitecture="msil" />
       <hash>
         <dsig:Transforms>
           <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
         </dsig:Transforms>
         <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
-        <dsig:DigestValue>hm8sXE4ofUwEluMzrTxINhf4dM04nUsoPEW97F/3b0g=</dsig:DigestValue>
+        <dsig:DigestValue>mB4ZBCJrOusuBX44Rru9s2mvJ9c1gYo+RASqhT9qQx4=</dsig:DigestValue>
       </hash>
     </dependentAssembly>
   </dependency>
