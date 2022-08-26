@@ -321,7 +321,6 @@ namespace DatabaseSys
                                         MissingFieldFound = null,
                                         BadDataFound = null
                                     };
-
                                     //csvResult.Configuration = csvReaderConfiguration;
                                     csvResult.Read();
                                     object currentValue;
@@ -356,7 +355,7 @@ namespace DatabaseSys
                                         cmd2.Parameters.Clear();
                                         if (csvResult != null)
                                         {
-                                            //csvResult.Read();
+                                            csvResult.Read();
 
                                             //getting all the columns selected by user. it allows to get records of Only the selected columns like 0 2 8
                                             for (int ind = 0; ind < finalColumnsIndices.Count; ind++)
@@ -379,13 +378,16 @@ namespace DatabaseSys
                                                 }
                                                 else
                                                 {
-                                                    if(csvResult.GetField<string>(finalColumnsIndices[ind]).ToString().Length == 0)
+                                                    //MessageBox.Show(csvResult.GetField<string>(finalColumnsIndices[fColInd]).ToString() + " "+ currentColName+" "+ csvResult.GetField<string>(currentColName).ToString());
+                                                    if(csvResult.GetField<string>(finalColumnsIndices[fColInd]).ToString().Length == 0)
+                                                    //if(csvResult.GetField<string>(finalColumnsIndices[ind]).i)
                                                     {
                                                         currentValue = "";
                                                     }
                                                     else
                                                     {
-                                                        currentValue = csvResult.GetField<string>(finalColumnsIndices[ind]);
+                                                        currentValue = csvResult.GetField<string>(finalColumnsIndices[fColInd]);
+
                                                     }
                                                 }
                                                 fillSQLParameterWithCSVRecord(currentColType, currentValue, currentColName);
@@ -399,6 +401,8 @@ namespace DatabaseSys
 
 
                                             execQreturn = cmd2.ExecuteNonQuery();
+
+                                            csvResult.Read();
                                             //con.Close();
                                         }
                                     }
