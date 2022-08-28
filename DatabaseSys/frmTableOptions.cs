@@ -67,8 +67,6 @@ namespace DatabaseSys
         {
             //this.txtSelectedColName.Text = checkedListBox1.SelectedItem.ToString();
             index = checkedListBox1.SelectedIndex;
-            //this.txtSelectedColName.Text = checkedListBox1.Items[index].ToString();
-            //this.txtSelectedColName.Text = checkedListBox1.Items[index].ToString();
 
             //to check if the item returned on indexChanged not null
             if (checkedListBox1.SelectedItem!=null)
@@ -111,10 +109,8 @@ namespace DatabaseSys
         public void saveFileDataToDatabase()
         {
             string tableName = this.txtTableforDb.Text.Replace(" ", "_");
-            //conString = "Data Source = (localDB)\\MSSQLLocalDB;  AttachDbFilename=|DataDirectory|\\Senndy" + (frmCatForSelect.category).Replace(" ", String.Empty) + ".mdf; Initial Catalog =Senndy" + (frmCatForSelect.category).Replace(" ",String.Empty)+ "; Integrated Security = true; Connection Timeout=30;";
-            conString = "Data Source = (localDB)\\MSSQLLocalDB;  AttachDbFilename=" + System.IO.Path.GetFullPath("Senndy" + (frmCatForSelect.category).Replace(" Media", String.Empty) + ".mdf") + "; Integrated Security = true; Connection Timeout=30;";
-            //conString = "Data Source = (localDB)\\MSSQLLocalDB;  AttachDbFilename=|DataDirectory|\\Senndy" + (frmCatForSelect.category).Replace(" ", String.Empty) + ".mdf; Integrated Security = true; Connection Timeout=30;";
-
+             conString = "Data Source = (localDB)\\MSSQLLocalDB;  AttachDbFilename=" + System.IO.Path.GetFullPath("Senndy" + (frmCatForSelect.category).Replace(" Media", String.Empty) + ".mdf") + "; Integrated Security = true; Connection Timeout=30;";
+            
 
             string query = "IF OBJECT_ID('dbo." + tableName + "', 'U') IS NULL ";
             query += "BEGIN ";
@@ -157,7 +153,6 @@ namespace DatabaseSys
             insrtQuery += "( ";
             for (int lcv = 0; lcv < finalColumns.Count; lcv++)
             {
-                //insrtQuery += "`"+finalColumns[lcv]+"`, ";
                 insrtQuery += "" + finalColumns[lcv].Replace(" ", "_") + ", ";
             }
             insrtQuery += " createdAt, DataBaseCountry, dataSource ) ";
@@ -171,132 +166,13 @@ namespace DatabaseSys
 
             insrtQuery += " @createdAt, @DataBaseCountry, @dataSource );";
 
-
-            //insrtQuery += " @createdAt, @DataBaseCountry, @dataSource ),(";
-            //insrtQuery += "'" + DateTime.Now + "', '" + frmCatForSelect.country + "', '" + frmCatForSelect.fileSource + "' ),(";
-
-            //insrtQuery = insrtQuery.Remove(insrtQuery.Length - 2);
-            //insrtQuery += ";";
             using (SqlConnection mConnection = new SqlConnection(conString))
             {
 
-                ///////////////////////////////
-                //mConnection.Open();
-                //SqlTransaction transaction = mConnection.BeginTransaction();
-
-                ////Obtain a dataset, obviously a "select *" is not the best way...
-                //var mySqlDataAdapterSelect = new SqlDataAdapter("select * from " + tableName, mConnection);
-
-                //var ds = new DataSet();
-
-                //mySqlDataAdapterSelect.Fill(ds, tableName);
-
-
-                //SqlDataAdapter mySqlDataAdapter = new SqlDataAdapter(); ;
-
-                //mySqlDataAdapter.InsertCommand = new SqlCommand(insrtQuery, mConnection);
-
-                ////Writing records
-                //if (frmCatForSelect.selectedFormat.Equals("CSV"))
-                //{
-
-                //    string currentLine;
-                //    List<dynamic> records;
-                //    List<string> myStringColumn = new List<string>();
-
-                //    using (var streamReader = new StreamReader(frmCatForSelect.filename))
-                //    {
-                //        using (var csvResult = new CsvReader(streamReader, CultureInfo.InvariantCulture))
-                //        {
-                //            //records = csvResult.GetRecords<dynamic>().ToList();
-                //            csvResult.Read();
-                //            object currentValue;
-                //            //csvResult.Read();
-
-                //            var stopwatch = new Stopwatch();
-                //            stopwatch.Start();
-
-
-                //            while (csvResult.Read() != null)
-                //            {
-
-                //                int fColInd = 0;
-                //                //cmd2.Parameters.Clear();
-                //                if (csvResult != null)
-                //                {
-                //                    //csvResult.Read();
-
-                //                    DataRow row = ds.Tables[tableName].NewRow();
-
-                //                    //getting all the columns selected by user. it allows to get records of Only the selected columns like 0 2 8
-                //                    for (int ind = 0; ind < finalColumnsIndices.Count; ind++)
-                //                    {
-                //                        //getting the type of current column from datatypemapper to check if '' is needed if the type is set to non number.
-                //                        string currentColType = dataTypeMapper[columnToTypeMapper[finalColumns[fColInd]]];
-                //                        string currentColName = finalColumns[fColInd].Replace(" ", "_");
-                //                        if (frmCatForSelect.isDelimiteredFile)
-                //                        {
-                //                            string[] delimiterSplittedValues = csvResult.GetField<string>(0).Split('|');
-                //                            currentValue = delimiterSplittedValues[finalColumnsIndices[ind]];
-
-                //                        }
-                //                        else
-                //                        {
-                //                            currentValue = csvResult.GetField<string>(finalColumnsIndices[ind]);
-                //                        }
-                //                        fillSQLParameterWithCSVRecord(currentColType, currentValue, currentColName, ref mySqlDataAdapterSelect, ref row);
-
-
-                //                        //row[currentColName] = currentValue;
-                //                    }
-                //                    //mySqlDataAdapter.InsertCommand.Parameters.Add("@createdAt", MySqlDbType.Datetime, DateTime.Now);
-                //                    mySqlDataAdapter.InsertCommand.Parameters.Add("@createdAt", SqlDbType.DateTime, 0);
-                //                    mySqlDataAdapter.InsertCommand.Parameters.Add("@DataBaseCountry", SqlDbType.VarChar,55, frmCatForSelect.country);
-                //                    mySqlDataAdapter.InsertCommand.Parameters.Add("@dataSource", SqlDbType.VarChar,32, frmCatForSelect.fileSource);
-
-                //                    mySqlDataAdapter.InsertCommand.UpdatedRowSource = UpdateRowSource.None;
-
-                //                    ds.Tables[tableName].Rows.Add(row);
-
-
-                //                    //row[]
-                //                    //cmd2.Parameters.AddWithValue("@createdAt", DateTime.Now);
-                //                    //cmd2.Parameters.AddWithValue("@DataBaseCountry", frmCatForSelect.country);
-                //                    //cmd2.Parameters.AddWithValue("@dataSource", frmCatForSelect.fileSource);
-
-
-                //                    //int execQreturn = cmd2.ExecuteNonQuery();
-                //                    ////con.Close();
-                //                    //if (execQreturn == -1)
-                //                    //{
-                //                    //    MessageBox.Show("Table creation failed. Make sure you have given the table names and selected appropriate column types. Or the file may have data in inappropriate form");
-
-                //                    //}
-                //                    //else
-                //                    //{
-                //                    //    MessageBox.Show("Table created Successfully with all the records");
-                //                    //}
-
-                //                }
-                //            }
-                //            mySqlDataAdapter.UpdateBatchSize = 100;
-                //            mySqlDataAdapter.Update(ds, tableName);
-
-                //            transaction.Commit();
-
-                //            stopwatch.Stop();
-                //            MessageBox.Show(stopwatch.ElapsedMilliseconds + " milliseconds");
-
-                //        }
-                //    }
-
-
-                ////////////
+               
                 mConnection.Open();
                 using (SqlTransaction trans = mConnection.BeginTransaction())
                 {
-                    //con.Open();
-                    //cmd2 = con.CreateCommand();
                     //preparing insert query
                     using (cmd2 = new SqlCommand(insrtQuery, mConnection, trans))
                     {
@@ -314,48 +190,17 @@ namespace DatabaseSys
                             {
                                 using (var csvResult = new CsvReader(streamReader, CultureInfo.InvariantCulture))
                                 {
-                                    //records = csvResult.GetRecords<dynamic>().ToList();
-
-                                    var csvReaderConfiguration = new CsvHelper.Configuration.CsvConfiguration(cultureInfo: CultureInfo.InvariantCulture)
-                                    {
-                                        MissingFieldFound = null,
-                                        BadDataFound = null
-                                    };
-                                    //csvResult.Configuration = csvReaderConfiguration;
                                     csvResult.Read();
                                     object currentValue;
-                                    //csvResult.Configuration.BadDataFound = context =>
-                                    //{
-                                    //    isRecordBad = true;
-                                    //    bad.Add(context.RawRecord);
-                                    //};
+                                  
 
-                                    //csvResult.Configuration.MissingFieldFound = (headerNames, index, context) =>
-                                    //{
-                                    //    isRecordBad = true;
-                                    //    bad.Add(context.RawRecord);
-                                    //};
-
-                                    //csvResult.Read();
-
-                                    //csvResult.Configuration.BadDataFound/* = true*/;
-
-                                    //csvResult.Configuration.MissingFieldFound (index) =>
-                                    //{
-
-                                    //}
-
-                                    //var csvReaderConfiguration = new CsvHelper.Configuration.CsvConfiguration(cultureInfo: CultureInfo.InvariantCulture,
-                                    //missingFieldFound= ()=> { });
-
-                                    while (csvResult.Read() != null)
+                                    while (csvResult.Read())
                                     {
 
                                         int fColInd = 0;
                                         cmd2.Parameters.Clear();
                                         if (csvResult != null)
                                         {
-                                            csvResult.Read();
 
                                             //getting all the columns selected by user. it allows to get records of Only the selected columns like 0 2 8
                                             for (int ind = 0; ind < finalColumnsIndices.Count; ind++)
@@ -378,16 +223,13 @@ namespace DatabaseSys
                                                 }
                                                 else
                                                 {
-                                                    //MessageBox.Show(csvResult.GetField<string>(finalColumnsIndices[fColInd]).ToString() + " "+ currentColName+" "+ csvResult.GetField<string>(currentColName).ToString());
                                                     if(csvResult.GetField<string>(finalColumnsIndices[fColInd]).ToString().Length == 0)
-                                                    //if(csvResult.GetField<string>(finalColumnsIndices[ind]).i)
                                                     {
                                                         currentValue = "";
                                                     }
                                                     else
                                                     {
                                                         currentValue = csvResult.GetField<string>(finalColumnsIndices[fColInd]);
-
                                                     }
                                                 }
                                                 fillSQLParameterWithCSVRecord(currentColType, currentValue, currentColName);
@@ -399,11 +241,7 @@ namespace DatabaseSys
                                             cmd2.Parameters.AddWithValue("@DataBaseCountry", frmCatForSelect.country);
                                             cmd2.Parameters.AddWithValue("@dataSource", frmCatForSelect.fileSource);
 
-
                                             execQreturn = cmd2.ExecuteNonQuery();
-
-                                            csvResult.Read();
-                                            //con.Close();
                                         }
                                     }
 
