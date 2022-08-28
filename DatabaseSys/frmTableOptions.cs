@@ -46,7 +46,7 @@ namespace DatabaseSys
             finalColumnsIndices = new List<int>();
             columnToTypeMapper = new Dictionary<string, string>();
             dataTypeMapper = new Dictionary<string, string>();
-            string[] dataTypeAliases = { "Short-text", "Long-text",  "Number", "Decimal", "Age","Date", "DateTime", "Time", "Year", "True-False(1/0)","Money" };
+            string[] dataTypeAliases = { "Short-text", "Long-text",  "Number", "Decimal", "Age","Date", "DateTime", "Time", "Year","Link", "True-False(1/0)","Money" };
             fillMaps();
             this.cbDataType.Items.AddRange(dataTypeAliases);
             this.cbDataType.SelectedIndex = 0;
@@ -147,7 +147,7 @@ namespace DatabaseSys
                 }
             }
 
-
+            int execQreturn = 0;
 
             insrtQuery = " INSERT INTO " + tableName + " ";
             insrtQuery += "( ";
@@ -177,14 +177,13 @@ namespace DatabaseSys
                     using (cmd2 = new SqlCommand(insrtQuery, mConnection, trans))
                     {
                         cmd2.CommandType = CommandType.Text;
-                        int execQreturn = 0;
+                        
                         //Writing records
                         if (frmCatForSelect.selectedFormat.Equals("CSV"))
                         {
-
                             string currentLine;
-                            List<dynamic> records;
-                            List<string> myStringColumn = new List<string>();
+                            //List<dynamic> records;
+                           // List<string> myStringColumn = new List<string>();
 
                             using (var streamReader = new StreamReader(frmCatForSelect.filename))
                             {
@@ -192,7 +191,6 @@ namespace DatabaseSys
                                 {
                                     csvResult.Read();
                                     object currentValue;
-                                  
 
                                     while (csvResult.Read())
                                     {
@@ -240,244 +238,243 @@ namespace DatabaseSys
                                             cmd2.Parameters.AddWithValue("@createdAt", DateTime.Now);
                                             cmd2.Parameters.AddWithValue("@DataBaseCountry", frmCatForSelect.country);
                                             cmd2.Parameters.AddWithValue("@dataSource", frmCatForSelect.fileSource);
-
                                             execQreturn = cmd2.ExecuteNonQuery();
+                                                
                                         }
                                     }
 
                                 }
                             }
-                            if (execQreturn == -1)
+                            
+                        }
+
+                        else if (frmCatForSelect.selectedFormat.Equals("Excel"))
+                        {
+                            //writeExcelToDatabase(insrtQuery, 0, 100);
+                            object currentValue;
+
+                            MessageBox.Show(frmCatForSelect.selectedFormat + " " + frmCatForSelect.filename);
+                            Excel.Application xlApp;
+                            Excel.Workbook xlWorkBook;
+                            Excel.Worksheet xlWorkSheet;
+                            Excel.Range range;
+
+
+                            int totalRowsInExcel = 0;
+                            int totalColsInExcel = 0;
+
+                            xlApp = new Excel.Application();
+                            xlWorkBook = xlApp.Workbooks.Open(frmCatForSelect.filename, 0, true, 5, "", "", true, Microsoft.Office.Interop.Excel.XlPlatform.xlWindows, "\t", false, false, 0, true, 1, 0);
+                            xlWorkSheet = (Excel.Worksheet)xlWorkBook.Worksheets.get_Item(1);
+
+                            range = xlWorkSheet.UsedRange;
+                            totalRowsInExcel = range.Rows.Count + 1;
+                            totalColsInExcel = range.Columns.Count;
+
+                            //string str;
+                            //int rCnt;
+                            //int cCnt;
+                            //int rw = 0;
+                            //int cl = 0;
+
+                            //xlApp = new Excel.Application();
+                            //xlWorkBook = xlApp.Workbooks.Open(frmCatForSelect.filename, 0, true, 5, "", "", true, Microsoft.Office.Interop.Excel.XlPlatform.xlWindows, "\t", false, false, 0, true, 1, 0);
+                            //xlWorkSheet = (Excel.Worksheet)xlWorkBook.Worksheets.get_Item(1);
+
+                            //range = xlWorkSheet.UsedRange;
+                            //rw = range.Rows.Count;
+
+                            for (int rowCount = 2; rowCount < totalRowsInExcel; rowCount++)
                             {
-                                MessageBox.Show("Table creation failed. Make sure you have given the table names and selected appropriate column types. Or the file may have data in inappropriate form");
-                                //break;
+
+                                int fColInd = 0;
+                                cmd2.Parameters.Clear();
+                                //getting all the columns selected by user. it allows to get records of Only the selected columns like 0 2 8
+                                for (int ind = 0; ind < finalColumnsIndices.Count; ind++)
+                                    {
+                                        //getting the type of current column from datatypemapper to check if '' is needed if the type is set to non number.
+                                        string currentColType = dataTypeMapper[columnToTypeMapper[finalColumns[fColInd]]];
+                                        string currentColName = finalColumns[fColInd].Replace(" ", "_");
+
+                                        currentValue = (range.Cells[rowCount, finalColumnsIndices[ind] + 1] as Excel.Range).Value2;
+
+                                        fillSQLParameterWithCSVRecord(currentColType, currentValue, currentColName);
+
+                                        fColInd++;
+                                    }
+
+                                cmd2.Parameters.AddWithValue("@createdAt", DateTime.Now);
+                                cmd2.Parameters.AddWithValue("@DataBaseCountry", frmCatForSelect.country);
+                                cmd2.Parameters.AddWithValue("@dataSource", frmCatForSelect.fileSource);
+
+                                execQreturn = cmd2.ExecuteNonQuery();
                             }
-                            else
+
+                            xlWorkBook.Close(true, null, null);
+                            xlApp.Quit();
+
+
+                            //if (totalRowsInExcel > 1000)
+                            //{
+                            //    int colCount;
+                            //    for (colCount = 2; colCount < totalRowsInExcel; colCount += 800)
+                            //    {
+                            //        if (colCount + 800 < totalRowsInExcel)
+                            //        {
+                            //            writeExcelToDatabase(insrtQuery, colCount, colCount + 800);
+                            //        }
+
+                            //    }
+                            //    if (colCount < totalRowsInExcel - 1)
+                            //    {
+
+                            //        writeExcelToDatabase(insrtQuery, colCount, totalRowsInExcel);
+                            //    }
+                            //}
+                            //else
+                            //{
+                            //    writeExcelToDatabase(insrtQuery, 2, totalRowsInExcel);
+
+                            //}
+
+
+                        }
+                        else
+                        {
+                            using (StreamReader file = new StreamReader(frmCatForSelect.filename))
                             {
-                                MessageBox.Show("Table created Successfully with all the records");
-                                //break;
+                                int totalLinesInTxt = File.ReadAllLines(frmCatForSelect.filename).Length;
+                                if (totalLinesInTxt > 1000)
+                                {
+                                    int colCount = 0;
+                                    for (colCount = 0; colCount < totalLinesInTxt; colCount += 800)
+                                    {
+                                        if (colCount + 800 < totalLinesInTxt)
+                                        {
+                                            writeTXTToDatabase(insrtQuery, colCount, colCount + 800);
+                                        }
+
+                                    }
+                                    if (colCount < totalLinesInTxt - 1)
+                                    {
+
+                                        writeTXTToDatabase(insrtQuery, colCount, totalLinesInTxt);
+                                    }
+                                }
+                                else
+                                {
+                                    writeTXTToDatabase(insrtQuery, 0, totalLinesInTxt);
+
+                                }
+
                             }
-
-                            //            //    {
-                            //            //if (records.Count > 1000)
-                            //            //{
-                            //            //    int colCount = 0;
-                            //            //    for (colCount = 0; colCount < records.Count; colCount += 800)
-                            //            //    {
-                            //            //        if (colCount + 800 < records.Count)
-                            //            //        {
-                            //            //            writeCSVToDatabase(colCount, colCount + 800);
-                            //            //        }
-
-                            //                //    }
-                            //                //    if (colCount < records.Count - 1)
-                            //                //    {
-
-                            //                //        writeCSVToDatabase(colCount, records.Count);
-                            //                //    }
-                            //                //}
-                            //                //else
-                            //                //{
-                            //                //    writeCSVToDatabase(0, records.Count);
-                            //                //}
-
-
-
-                            //        }
-                            //        else if (frmCatForSelect.selectedFormat.Equals("Excel"))
-                            //        {
-                            //            //writeExcelToDatabase(insrtQuery, 0, 100);
-
-                            //            MessageBox.Show(frmCatForSelect.selectedFormat + " " + frmCatForSelect.filename);
-                            //            Excel.Application xlApp;
-                            //            Excel.Workbook xlWorkBook;
-                            //            Excel.Worksheet xlWorkSheet;
-                            //            Excel.Range range;
-
-
-                            //            int totalRowsInExcel = 0;
-
-
-                            //            xlApp = new Excel.Application();
-                            //            xlWorkBook = xlApp.Workbooks.Open(frmCatForSelect.filename, 0, true, 5, "", "", true, Microsoft.Office.Interop.Excel.XlPlatform.xlWindows, "\t", false, false, 0, true, 1, 0);
-                            //            xlWorkSheet = (Excel.Worksheet)xlWorkBook.Worksheets.get_Item(1);
-
-                            //            range = xlWorkSheet.UsedRange;
-                            //            totalRowsInExcel = range.Rows.Count + 1;
-
-                            //            xlWorkBook.Close(true, null, null);
-                            //            xlApp.Quit();
-                            //            if (totalRowsInExcel > 1000)
-                            //            {
-                            //                int colCount;
-                            //                for (colCount = 2; colCount < totalRowsInExcel; colCount += 800)
-                            //                {
-                            //                    if (colCount + 800 < totalRowsInExcel)
-                            //                    {
-                            //                        writeExcelToDatabase(insrtQuery, colCount, colCount + 800);
-                            //                    }
-
-                            //                }
-                            //                if (colCount < totalRowsInExcel - 1)
-                            //                {
-
-                            //                    writeExcelToDatabase(insrtQuery, colCount, totalRowsInExcel);
-                            //                }
-                            //            }
-                            //            else
-                            //            {
-                            //                writeExcelToDatabase(insrtQuery, 2, totalRowsInExcel);
-
-                            //            }
-
-
-                            //        }
-                            //        else
-                            //        {
-                            //            using (StreamReader file = new StreamReader(frmCatForSelect.filename))
-                            //            {
-                            //                int totalLinesInTxt = File.ReadAllLines(frmCatForSelect.filename).Length;
-                            //                if (totalLinesInTxt > 1000)
-                            //                {
-                            //                    int colCount = 0;
-                            //                    for (colCount = 0; colCount < totalLinesInTxt; colCount += 800)
-                            //                    {
-                            //                        if (colCount + 800 < totalLinesInTxt)
-                            //                        {
-                            //                            writeTXTToDatabase(insrtQuery, colCount, colCount + 800);
-                            //                        }
-
-                            //                    }
-                            //                    if (colCount < totalLinesInTxt - 1)
-                            //                    {
-
-                            //                        writeTXTToDatabase(insrtQuery, colCount, totalLinesInTxt);
-                            //                    }
-                            //                }
-                            //                else
-                            //                {
-                            //                    writeTXTToDatabase(insrtQuery, 0, totalLinesInTxt);
-
-                            //                }
-
-                            //            }
-                            //        }
-
-
-                            //        //insrtQuery = insrtQuery.Remove(insrtQuery.Length - 2);
-                            //        //insrtQuery += ";";
-                            //        //cmd2.CommandText = insrtQuery.Substring(0, insrtQuery.Length - 1) + ";";
-                            //        //int execQreturn = cmd2.ExecuteNonQuery();
-                            //        ////con.Close();
-                            //        //if (execQreturn == -1)
-                            //        //{
-                            //        //    MessageBox.Show("Table creation failed. Make sure you have given the table names and selected appropriate column types. Or the file may have data in inappropriate form");
-
-                            //        //}
-                            //        //else
-                            //        //{
-                            //        //    MessageBox.Show("Table created Successfully with all the records");
-                            //        //}
-
-
-                            //        trans.Commit();
-                            }
+                        }
                         trans.Commit();
                     }
-                    }
+                }
 
-                    }
-        }
-
-
-        private void fillSQLParameterWithCSVRecord(string currentColType, object currentValue, string currentColName, ref SqlDataAdapter mySqlDataAdapter,ref DataRow row)
-        {
-                //mySqlDataAdapter 
-
-            if (isOfIntType(currentColType))
+            }
+            if (execQreturn == -1)
             {
-
-                if (currentColType.Equals("INT"))
-                {
-                    if (currentValue.ToString() == "")
-                    {
-                        //insrtQuery += 0 + ", ";
-
-                        //cmd2.Parameters.AddWithValue("@" + currentColName + "", 0);
-                    }
-                    else
-                    {
-                        int curIntVal = Convert.ToInt32(currentValue);
-
-                        cmd2.Parameters.AddWithValue("@" + currentColName + "", curIntVal);
-                        //cmd2.Paraters.AddWithValue()
-                        //insrtQuery += curIntVal + ", ";
-                    }
-
-                }
-                else if (currentColType.Equals("FLOAT"))
-                {
-                    if (currentValue.ToString() == "")
-                    {
-                        cmd2.Parameters.AddWithValue("@" + currentColName + "", 0);
-                    }
-                    else
-                    {
-                        double curIntVal = Convert.ToDouble(currentValue);
-                        cmd2.Parameters.AddWithValue("@" + currentColName + "", curIntVal);
-                    }
-                }
-                else if (currentColType.Equals("TINYINT"))
-                {
-                    if (currentValue.ToString() == "")
-                    {
-                        cmd2.Parameters.AddWithValue("@" + currentColName + "", 0);
-                    }
-                    else
-                    {
-                        Byte curIntVal = Convert.ToByte(currentValue);
-                        cmd2.Parameters.AddWithValue("@" + currentColName + "", curIntVal);
-                    }
-                }
-                else if (currentColType.Equals("BIT"))
-                {
-                    if (currentValue.ToString() == "")
-                    {
-                        cmd2.Parameters.AddWithValue("@" + currentColName + "", 0);
-                    }
-                    else
-                    {
-                        Boolean curIntVal = Convert.ToBoolean(currentValue);
-                        cmd2.Parameters.AddWithValue("@" + currentColName + "", curIntVal);
-                    }
-                }
-                else //if (currentColType.Equals("SMALLINT"))
-                {
-                    if (currentValue.ToString() == "")
-                    {
-                        currentColName = "@" + currentColName;
-                        cmd2.Parameters.AddWithValue(currentColName, 0);
-                    }
-                    else
-                    {
-                        int curIntVal = Convert.ToInt16(currentValue);
-                        currentColName = "@" + currentColName;
-                        cmd2.Parameters.AddWithValue(currentColName, curIntVal);
-
-                    }
-                }
+                MessageBox.Show("Table creation failed. Make sure you have given the table names and selected appropriate column types. Or the file may have data in inappropriate form");
+                //break;
             }
             else
             {
-                
-                string currentColumnValue = currentValue.ToString();
-                mySqlDataAdapter.InsertCommand.Parameters.Add("@"+currentColName, SqlDbType.VarChar, 202, currentColumnValue);
-                row[currentColName] = currentColumnValue;
-                //cmd2.Parameters.AddWithValue("@" + currentColName, currentColumnValue);
-
+                MessageBox.Show("Table created Successfully with all the records");
+                //break;
             }
         }
 
+
+        //private void fillSQLParameterWithCSVRecord(string currentColType, object currentValue, string currentColName, ref SqlDataAdapter mySqlDataAdapter,ref DataRow row)
+        //{
+        //        //mySqlDataAdapter 
+
+        //    if (isOfIntType(currentColType))
+        //    {
+
+        //        if (currentColType.Equals("INT"))
+        //        {
+        //            if (currentValue.ToString() == "")
+        //            {
+        //                //insrtQuery += 0 + ", ";
+
+        //                //cmd2.Parameters.AddWithValue("@" + currentColName + "", 0);
+        //            }
+        //            else
+        //            {
+        //                int curIntVal = Convert.ToInt32(currentValue);
+
+        //                cmd2.Parameters.AddWithValue("@" + currentColName + "", curIntVal);
+        //                //cmd2.Paraters.AddWithValue()
+        //                //insrtQuery += curIntVal + ", ";
+        //            }
+
+        //        }
+        //        else if (currentColType.Equals("FLOAT"))
+        //        {
+        //            if (currentValue.ToString() == "")
+        //            {
+        //                cmd2.Parameters.AddWithValue("@" + currentColName + "", 0);
+        //            }
+        //            else
+        //            {
+        //                double curIntVal = Convert.ToDouble(currentValue);
+        //                cmd2.Parameters.AddWithValue("@" + currentColName + "", curIntVal);
+        //            }
+        //        }
+        //        else if (currentColType.Equals("TINYINT"))
+        //        {
+        //            if (currentValue.ToString() == "")
+        //            {
+        //                cmd2.Parameters.AddWithValue("@" + currentColName + "", 0);
+        //            }
+        //            else
+        //            {
+        //                Byte curIntVal = Convert.ToByte(currentValue);
+        //                cmd2.Parameters.AddWithValue("@" + currentColName + "", curIntVal);
+        //            }
+        //        }
+        //        else if (currentColType.Equals("BIT"))
+        //        {
+        //            if (currentValue.ToString() == "")
+        //            {
+        //                cmd2.Parameters.AddWithValue("@" + currentColName + "", 0);
+        //            }
+        //            else
+        //            {
+        //                Boolean curIntVal = Convert.ToBoolean(currentValue);
+        //                cmd2.Parameters.AddWithValue("@" + currentColName + "", curIntVal);
+        //            }
+        //        }
+        //        else //if (currentColType.Equals("SMALLINT"))
+        //        {
+        //            if (currentValue.ToString() == "")
+        //            {
+        //                currentColName = "@" + currentColName;
+        //                cmd2.Parameters.AddWithValue(currentColName, 0);
+        //            }
+        //            else
+        //            {
+        //                int curIntVal = Convert.ToInt16(currentValue);
+        //                currentColName = "@" + currentColName;
+        //                cmd2.Parameters.AddWithValue(currentColName, curIntVal);
+
+        //            }
+        //        }
+        //    }
+        //    else
+        //    {
+                
+        //        string currentColumnValue = currentValue.ToString();
+        //        mySqlDataAdapter.InsertCommand.Parameters.Add("@"+currentColName, SqlDbType.VarChar, 202, currentColumnValue);
+        //        row[currentColName] = currentColumnValue;
+        //        //cmd2.Parameters.AddWithValue("@" + currentColName, currentColumnValue);
+
+        //    }
+        //}
+        //currently not Used
         private void fillSQLParameterWithCSVRecord(string currentColType, object currentValue, string currentColName)
         {
 
@@ -1179,8 +1176,9 @@ namespace DatabaseSys
         {
 
             
-            dataTypeMapper.Add("Short-text", "VARCHAR(100)");
-            dataTypeMapper.Add("Long-text", "VARCHAR(230)");
+            dataTypeMapper.Add("Short-text", "VARCHAR(250)");
+            dataTypeMapper.Add("Link", "VARCHAR(200)");
+            dataTypeMapper.Add("Long-text", "VARCHAR(400)");
             dataTypeMapper.Add("Number", "INT");
             dataTypeMapper.Add("Decimal", "FLOAT");
             dataTypeMapper.Add("True-False(1/0)", "BIT");
